@@ -1,49 +1,18 @@
-![Travis CI](https://travis-ci.com/krasserm/super-resolution.svg?branch=master)
-
 # Single Image Super-Resolution with EDSR, WDSR and SRGAN
-
-A [Tensorflow 2.x](https://www.tensorflow.org/beta) based implementation of
-
-- [Enhanced Deep Residual Networks for Single Image Super-Resolution](https://arxiv.org/abs/1707.02921) (EDSR), winner 
-  of the [NTIRE 2017](http://www.vision.ee.ethz.ch/ntire17/) super-resolution challenge.
-- [Wide Activation for Efficient and Accurate Image Super-Resolution](https://arxiv.org/abs/1808.08718) (WDSR), winner 
-  of the [NTIRE 2018](http://www.vision.ee.ethz.ch/ntire18/) super-resolution challenge (realistic tracks).
-- [Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network](https://arxiv.org/abs/1609.04802) (SRGAN).
 
 This is a complete re-write of the old Keras/Tensorflow 1.x based implementation available [here](https://github.com/krasserm/super-resolution/tree/previous).
 Some parts are still work in progress but you can already train models as described in the papers via a high-level training 
-API. Furthermore, you can also [fine-tune](#srgan-for-fine-tuning-edsr-and-wdsr-models) EDSR and WDSR models in an SRGAN 
-context. [Training](#training) and [usage](#getting-started) examples are given in the notebooks
-
+API.
 - [example-edsr.ipynb](example-edsr.ipynb)
 - [example-wdsr.ipynb](example-wdsr.ipynb)
 - [example-srgan.ipynb](example-srgan.ipynb) 
-
-A `DIV2K` [data provider](#div2k-dataset) automatically downloads [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) 
-training and validation images of given scale (2, 3, 4 or 8) and downgrade operator ("bicubic", "unknown", "mild" or 
-"difficult"). 
 
 **Important:** if you want to evaluate the pre-trained models with a dataset other than DIV2K please read 
 [this comment](https://github.com/krasserm/super-resolution/issues/19#issuecomment-586114933) (and replies) first.  
 
 ## Environment setup
 
-Create a new [conda](https://conda.io) environment with
-
-    conda env create -f environment.yml
-    
-and activate it with
-
-    conda activate sisr
-
-## Introduction
-
-You can find an introduction to single-image super-resolution in [this article](https://krasserm.github.io/2019/09/04/super-resolution/). 
-It also demonstrates how EDSR and WDSR models can be fine-tuned with SRGAN (see also [this section](#srgan-for-fine-tuning-edsr-and-wdsr-models)).
-
-## Getting started 
-
-Examples in this section require following pre-trained weights for running (see also example notebooks):  
+Create a new environment with conda env create -f environment.yml and activate it with conda activate sisr
 
 ### Pre-trained weights
 
@@ -95,12 +64,6 @@ plot_sample(lr, sr)
 
 ![result-wdsr](docs/images/result-wdsr.png)
 
-Weight normalization in WDSR models is implemented with the new `WeightNormalization` layer wrapper of 
-[Tensorflow Addons](https://github.com/tensorflow/addons). In its latest version, this wrapper seems to 
-corrupt weights when running `model.predict(...)`. A workaround is to set `model.run_eagerly = True` or 
-compile the model with `model.compile(loss='mae')` in advance. This issue doesn't arise when calling the
-model directly with `model(...)` though. To be further investigated ... 
-
 ### SRGAN
 
 ```python
@@ -116,52 +79,6 @@ plot_sample(lr, sr)
 ```
 
 ![result-srgan](docs/images/result-srgan.png)
-
-## DIV2K dataset
-
-For training and validation on [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) images, applications should use the 
-provided `DIV2K` data loader. It automatically downloads DIV2K images to `.div2k` directory and converts them to a 
-different format for faster loading.
-
-### Training dataset
-
-```python
-from data import DIV2K
-
-train_loader = DIV2K(scale=4,             # 2, 3, 4 or 8
-                     downgrade='bicubic', # 'bicubic', 'unknown', 'mild' or 'difficult' 
-                     subset='train')      # Training dataset are images 001 - 800
-                     
-# Create a tf.data.Dataset          
-train_ds = train_loader.dataset(batch_size=16,         # batch size as described in the EDSR and WDSR papers
-                                random_transform=True, # random crop, flip, rotate as described in the EDSR paper
-                                repeat_count=None)     # repeat iterating over training images indefinitely
-
-# Iterate over LR/HR image pairs                                
-for lr, hr in train_ds:
-    # .... 
-```
-
-Crop size in HR images is 96x96. 
-
-### Validation dataset
-
-```python
-from data import DIV2K
-
-valid_loader = DIV2K(scale=4,             # 2, 3, 4 or 8
-                     downgrade='bicubic', # 'bicubic', 'unknown', 'mild' or 'difficult' 
-                     subset='valid')      # Validation dataset are images 801 - 900
-                     
-# Create a tf.data.Dataset          
-valid_ds = valid_loader.dataset(batch_size=1,           # use batch size of 1 as DIV2K images have different size
-                                random_transform=False, # use DIV2K images in original size 
-                                repeat_count=1)         # 1 epoch
-                                
-# Iterate over LR/HR image pairs                                
-for lr, hr in valid_ds:
-    # ....                                 
-```
 
 ## Training 
 
